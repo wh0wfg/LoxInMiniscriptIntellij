@@ -108,7 +108,59 @@ public class MloxKeywordCompletionContributor extends CompletionContributor impl
         addThis();
         addSuper();
         addClass();
+        addPrint();
+        addReturn();
     }
+
+    private void addPrint() {
+        extend(
+                CompletionType.BASIC,
+                psiElement()
+                        .withLanguage(MloxLanguage.INSTANCE)
+                        .and(FIRST_ON_LINE),
+                new CompletionProvider<>() {
+                    @Override
+                    protected void addCompletions(@NotNull CompletionParameters parameters, @NotNull ProcessingContext context, @NotNull CompletionResultSet result) {
+                        result.addElement(
+                                LookupElementBuilder.create("print ")
+                                        .withInsertHandler((context1, item) -> {
+                                            String template = "print ;";
+                                            int cursorOffset = template.indexOf(";") - 1;
+                                            context1.getDocument().replaceString(context1.getStartOffset(), context1.getSelectionEndOffset(), template);
+                                            context1.getEditor().getCaretModel().moveToOffset(context1.getStartOffset() + cursorOffset + 1);
+                                        })
+                                        .withBoldness(true)
+                        );
+                    }
+                }
+        );
+    }
+
+    private void addReturn() {
+        extend(
+                CompletionType.BASIC,
+                psiElement()
+                        .withLanguage(MloxLanguage.INSTANCE)
+                        .and(FIRST_ON_LINE)
+                        .inside(MloxFunctionStmtPsiElement.class),
+                new CompletionProvider<>() {
+                    @Override
+                    protected void addCompletions(@NotNull CompletionParameters parameters, @NotNull ProcessingContext context, @NotNull CompletionResultSet result) {
+                        result.addElement(
+                                LookupElementBuilder.create("return ")
+                                        .withInsertHandler((context1, item) -> {
+                                            String template = "return ;";
+                                            int cursorOffset = template.indexOf(";");
+                                            context1.getDocument().replaceString(context1.getStartOffset(), context1.getSelectionEndOffset(), template);
+                                            context1.getEditor().getCaretModel().moveToOffset(context1.getStartOffset() + cursorOffset);
+                                        })
+                                        .withBoldness(true)
+                        );
+                    }
+                }
+        );
+    }
+
 
     private void addThis() {
         extend(

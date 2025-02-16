@@ -261,9 +261,11 @@ public class MloxParser implements PsiParser {
         SyntaxTreeBuilder.Marker returnStmt = builder.mark();
 
         builder.advanceLexer();
-        if (!parseExpression(builder)) {
-            returnStmt.drop();
-            return false;
+        if (builder.getTokenType() != EOL) {
+            if (!parseExpression(builder)) {
+                returnStmt.drop();
+                return false;
+            }
         }
 
         if (builder.getTokenType() != EOL) {

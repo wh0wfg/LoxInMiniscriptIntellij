@@ -28,6 +28,9 @@ public class MloxParser implements PsiParser {
 
             if (KEYWORD_SET.contains(builder.getTokenType())) return;
             if (builder.getTokenType() == IDENTIFIER) return;
+            if (builder.getTokenType() == RIGHT_BRACE) return;
+            if (builder.getTokenType() == RIGHT_PAREN) return;
+            if (builder.getTokenType() == RIGHT_SQUARE) return;
 
             builder.advanceLexer();
         }
@@ -202,8 +205,8 @@ public class MloxParser implements PsiParser {
         builder.advanceLexer();
 
         if (!parseExpression(builder)) {
-            ifStmt.drop();
-            return false;
+//            ifStmt.drop();
+//            return false;
         }
 
         if (builder.getTokenType() != RIGHT_PAREN) {
@@ -314,8 +317,8 @@ public class MloxParser implements PsiParser {
         builder.advanceLexer();
 
         if (!parseExpression(builder)) {
-            whileStmt.drop();
-            return false;
+//            whileStmt.drop();
+//            return false;
         }
 
         if (builder.getTokenType() != RIGHT_PAREN) {

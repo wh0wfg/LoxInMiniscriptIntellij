@@ -105,7 +105,75 @@ public class MloxKeywordCompletionContributor extends CompletionContributor impl
         addWhile();
         addFun();
         addElse();
+        addThis();
+        addSuper();
+        addClass();
     }
+
+    private void addThis() {
+        extend(
+                CompletionType.BASIC,
+                psiElement()
+                        .withLanguage(MloxLanguage.INSTANCE)
+                        .inside(MloxFunctionStmtPsiElement.class)
+                        .inside(MloxClassStmtPsiElement.class),
+                new CompletionProvider<>() {
+                    @Override
+                    protected void addCompletions(@NotNull CompletionParameters parameters, @NotNull ProcessingContext context, @NotNull CompletionResultSet result) {
+                        result.addElement(
+                                LookupElementBuilder.create("this")
+                                        .withBoldness(true)
+                                        .withAutoCompletionPolicy(AutoCompletionPolicy.ALWAYS_AUTOCOMPLETE)
+                        );
+                    }
+                }
+        );
+    }
+
+    private void addSuper() {
+        extend(
+                CompletionType.BASIC,
+                psiElement()
+                        .withLanguage(MloxLanguage.INSTANCE)
+                        .inside(MloxFunctionStmtPsiElement.class)
+                        .inside(MloxClassStmtPsiElement.class),
+                new CompletionProvider<>() {
+                    @Override
+                    protected void addCompletions(@NotNull CompletionParameters parameters, @NotNull ProcessingContext context, @NotNull CompletionResultSet result) {
+                        result.addElement(
+                                LookupElementBuilder.create("super")
+                                        .withBoldness(true)
+                                        .withAutoCompletionPolicy(AutoCompletionPolicy.ALWAYS_AUTOCOMPLETE)
+                        );
+                    }
+                }
+        );
+    }
+
+    private void addClass() {
+        extend(
+                CompletionType.BASIC,
+                psiElement()
+                        .withLanguage(MloxLanguage.INSTANCE)
+                        .and(FIRST_ON_LINE),
+                new CompletionProvider<>() {
+                    @Override
+                    protected void addCompletions(@NotNull CompletionParameters parameters, @NotNull ProcessingContext context, @NotNull CompletionResultSet result) {
+                        result.addElement(
+                                LookupElementBuilder.create("class ")
+                                        .withInsertHandler((context1, item) -> {
+                                            String template = "class ClassName {\n    init() {\n    }\n}";
+                                            int cursorOffset = template.indexOf("ClassName");
+                                            context1.getDocument().replaceString(context1.getStartOffset(), context1.getSelectionEndOffset(), template);
+                                            context1.getEditor().getCaretModel().moveToOffset(context1.getStartOffset() + cursorOffset + "ClassName".length());
+                                        })
+                                        .withBoldness(true)
+                        );
+                    }
+                }
+        );
+    }
+
 
     private void addFor() {
         extend(

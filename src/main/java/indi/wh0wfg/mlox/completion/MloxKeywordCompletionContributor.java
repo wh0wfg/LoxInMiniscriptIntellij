@@ -8,20 +8,17 @@ import com.intellij.codeInsight.lookup.TailTypeDecorator;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.project.DumbAware;
 import com.intellij.patterns.PsiElementPattern;
-import com.intellij.psi.PsiComment;
-import com.intellij.psi.PsiDocumentManager;
-import com.intellij.psi.PsiElement;
-import com.intellij.psi.PsiFile;
+import com.intellij.psi.*;
 import com.intellij.psi.filters.ElementFilter;
 import com.intellij.psi.filters.position.FilterPattern;
 import com.intellij.psi.impl.FreeThreadedFileViewProvider;
+import com.intellij.psi.tree.IElementType;
+import com.intellij.psi.tree.TokenSet;
 import com.intellij.util.ProcessingContext;
 import indi.wh0wfg.mlox.language.MloxLanguage;
 import indi.wh0wfg.mlox.language.psi.*;
-import indi.wh0wfg.mlox.language.psi.impl.MloxClassStmtPsiElement;
-import indi.wh0wfg.mlox.language.psi.impl.MloxForStmtPsiElement;
-import indi.wh0wfg.mlox.language.psi.impl.MloxFunctionStmtPsiElement;
-import indi.wh0wfg.mlox.language.psi.impl.MloxWhileStmtPsiElement;
+import indi.wh0wfg.mlox.language.psi.impl.*;
+import org.apache.tools.ant.types.resources.Tokens;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import static com.intellij.patterns.StandardPatterns.or;
@@ -37,6 +34,36 @@ public class MloxKeywordCompletionContributor extends CompletionContributor impl
                             psiElement(MloxForStmtPsiElement.class),
                             psiElement(MloxWhileStmtPsiElement.class)
                     ), or(psiElement(MloxFunctionStmtPsiElement.class), psiElement(MloxClassStmtPsiElement.class)));
+
+    private static final FilterPattern AFTER_IF = new FilterPattern(new AfterIfFilter());
+
+    private static class AfterIfFilter implements ElementFilter {
+        @Override
+        public boolean isAcceptable(Object element, PsiElement context) {
+            if (!(element instanceof PsiElement psiElement)) {
+                return false;
+            }
+
+            PsiElement parent = psiElement.getParent();
+            if (parent == null) {
+                return false;
+            }
+
+            PsiElement prevSibling = parent.getPrevSibling();
+
+            while ((prevSibling instanceof PsiWhiteSpace || prevSibling instanceof PsiComment)) {
+                prevSibling = prevSibling.getPrevSibling();
+            }
+
+            return prevSibling instanceof MloxIfStmtPsiElement;
+        }
+
+        @Override
+        public boolean isClassAcceptable(Class hintClass) {
+            return true;
+        }
+    }
+
 
     public static final FilterPattern FIRST_ON_LINE = new FilterPattern(new StartOfLineFilter());
 
@@ -76,6 +103,8 @@ public class MloxKeywordCompletionContributor extends CompletionContributor impl
         addFor();
         addIf();
         addWhile();
+        addFun();
+        addElse();
     }
 
     private void addFor() {
@@ -103,6 +132,31 @@ public class MloxKeywordCompletionContributor extends CompletionContributor impl
         );
     }
 
+    private void addFun() {
+        extend(
+                CompletionType.BASIC,
+                psiElement()
+                        .withLanguage(MloxLanguage.INSTANCE)
+                        .and(FIRST_ON_LINE),
+                new CompletionProvider<>() {
+                    @Override
+                    protected void addCompletions(@NotNull CompletionParameters parameters, @NotNull ProcessingContext context, @NotNull CompletionResultSet result) {
+                        result.addElement(
+                                LookupElementBuilder.create("fun ")
+                                        .withInsertHandler((context1, item) -> {
+                                            String template = "fun name() {\n    \n}";
+                                            int cursorOffset = template.indexOf("name()") + 4;
+                                            context1.getDocument().replaceString(context1.getStartOffset(), context1.getSelectionEndOffset(), template);
+                                            context1.getEditor().getCaretModel().moveToOffset(context1.getStartOffset() + cursorOffset);
+                                        })
+                                        .withBoldness(true)
+                        );
+                    }
+                }
+        );
+    }
+
+
     private void addIf() {
         extend(
                 CompletionType.BASIC,
@@ -126,6 +180,31 @@ public class MloxKeywordCompletionContributor extends CompletionContributor impl
                 }
         );
     }
+
+    private void addElse() {
+        extend(
+                CompletionType.BASIC,
+                psiElement()
+                        .withLanguage(MloxLanguage.INSTANCE)
+                        .and(AFTER_IF),
+                new CompletionProvider<>() {
+                    @Override
+                    protected void addCompletions(@NotNull CompletionParameters parameters, @NotNull ProcessingContext context, @NotNull CompletionResultSet result) {
+                        result.addElement(
+                                LookupElementBuilder.create("else ")
+                                        .withInsertHandler((context1, item) -> {
+                                            String template = "else {\n    \n}";
+                                            int cursorOffset = template.indexOf("{") + 2;
+                                            context1.getDocument().replaceString(context1.getStartOffset(), context1.getSelectionEndOffset(), template);
+                                            context1.getEditor().getCaretModel().moveToOffset(context1.getStartOffset() + cursorOffset);
+                                        })
+                                        .withBoldness(true)
+                        );
+                    }
+                }
+        );
+    }
+
 
     private void addWhile() {
         extend(

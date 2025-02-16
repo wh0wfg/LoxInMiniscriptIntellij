@@ -95,10 +95,36 @@ public final class MloxTokenTypes {
     // token sets
     public static final TokenSet COMMENT_SET = TokenSet.create(COMMENT);
     public static final TokenSet STRING_SET = TokenSet.create(STRING);
+    public static final TokenSet RECOVER_SET = TokenSet.create(
+            //            IMPORT,
+            AND, CLASS,
+//            ELSE,
+            FALSE, FUN,
+//            LAMBDA, FOREACH, IN,
+            FOR,
+//            SWITCH, CASE, DEFAULT, TRY, CATCH, FINALLY, THROW,
+            IF, NIL, OR,
+            PRINT, RETURN,
+//            BREAK, CONTINUE,
+            SUPER, THIS, TRUE, VAR,
+//            DO,
+            WHILE,
+            IDENTIFIER,
+            RIGHT_BRACE,
+            LEFT_BRACE
+    );
     public static final TokenSet KEYWORD_SET = TokenSet.create(
-            IMPORT, AND, CLASS, ELSE, FALSE, FUN, LAMBDA, FOREACH, IN, FOR,
-            SWITCH, CASE, DEFAULT, TRY, CATCH, FINALLY, THROW, IF, NIL, OR,
-            PRINT, RETURN, BREAK, CONTINUE, SUPER, THIS, TRUE, VAR, DO, WHILE
+            IMPORT,
+            AND, CLASS, ELSE, FALSE, FUN,
+            LAMBDA, FOREACH, IN,
+            FOR,
+            SWITCH, CASE, DEFAULT, TRY, CATCH, FINALLY, THROW,
+            IF, NIL, OR,
+            PRINT, RETURN,
+            BREAK, CONTINUE,
+            SUPER, THIS, TRUE, VAR,
+            DO,
+            WHILE
     );
     public static final TokenSet OPERATOR_SET = TokenSet.create(
             PLUS_ASSIGN, MINUS_ASSIGN, MUL_ASSIGN, DIV_ASSIGN,

@@ -26,11 +26,10 @@ public class MloxParser implements PsiParser {
                 return;
             }
 
-            if (KEYWORD_SET.contains(builder.getTokenType())) return;
+            if (RECOVER_SET.contains(builder.getTokenType())) return;
             if (builder.getTokenType() == IDENTIFIER) return;
             if (builder.getTokenType() == RIGHT_BRACE) return;
-            if (builder.getTokenType() == RIGHT_PAREN) return;
-            if (builder.getTokenType() == RIGHT_SQUARE) return;
+            if (builder.getTokenType() == LEFT_BRACE) return;
 
             builder.advanceLexer();
         }
@@ -207,14 +206,19 @@ public class MloxParser implements PsiParser {
         if (!parseExpression(builder)) {
 //            ifStmt.drop();
 //            return false;
+            if (builder.rawLookup(-1) != RIGHT_PAREN) {
+                builder.error("Expect ')' after if condition.");
+                ifStmt.drop();
+                return false;
+            }
+        } else {
+            if (builder.getTokenType() != RIGHT_PAREN) {
+                builder.error("Expect ')' after if condition.");
+                ifStmt.drop();
+                return false;
+            }
+            builder.advanceLexer();
         }
-
-        if (builder.getTokenType() != RIGHT_PAREN) {
-            builder.error("Expect ')' after if condition.");
-            ifStmt.drop();
-            return false;
-        }
-        builder.advanceLexer();
 
         if (!parseStatement(builder)) {
             ifStmt.drop();
@@ -809,6 +813,7 @@ public class MloxParser implements PsiParser {
         }
 
         builder.error("Expect expression.");
+        builder.advanceLexer();
         return false;
     }
 

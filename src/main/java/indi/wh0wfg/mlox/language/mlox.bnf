@@ -1,0 +1,306 @@
+{
+    parserClass = "indi.wh0wfg.mlox.language.parser.MloxParser"
+    extends = "com.intellij.extapi.psi.ASTWrapperPsiElement"
+
+    psiClassPrefix = "Mlox"
+    psiImplClassSuffix = "Impl"
+    psiPackage = "indi.wh0wfg.mlox.language.psi"
+    psiImplPackage = "indi.wh0wfg.mlox.language.psi.impl"
+
+    elementTypeHolderClass = "indi.wh0wfg.mlox.language.psi.MloxTypes"
+    elementTypeClass = "indi.wh0wfg.mlox.language.psi.MloxElementType"
+    tokenTypeClass = "indi.wh0wfg.mlox.language.psi.MloxTokenTypes"
+    psiImplUtilClass = "indi.wh0wfg.mlox.language.psi.impl.MloxPsiImpUtil"
+
+
+    tokens = [
+        LEFT_PAREN = '('
+        RIGHT_PAREN = ')'
+        LEFT_SQUARE = '['
+        RIGHT_SQUARE = ']'
+        LEFT_BRACE = '{'
+        RIGHT_BRACE = '}'
+        COMMA = ','
+        DOT = '.'
+        INCREMENT = '++'
+        DECREMENT = '--'
+        PLUS_ASSIGN = '+='
+        MINUS_ASSIGN = '-='
+        MUL_ASSIGN = '*='
+        DIV_ASSIGN = '/='
+        MOD_ASSIGN = '%='
+        NOT_EQUAL = '!='
+        EQUAL = '=='
+        GREAT_EQUAL = '>='
+        LESS_EQUAL = '<='
+        COLON = ':'
+        EOL = ';'
+        SLASH = '/'
+        STAR = '*'
+        BANG = '!'
+        MINUS = '-'
+        PLUS = '+'
+        MOD = '%'
+        ASSIGN = '='
+        GREATER = '>'
+        LESS = '<'
+        QUESTION = '?'
+        PIPE = '|'
+        IMPORT = 'import'
+        AND = 'and'
+        CLASS = 'class'
+        ELSE = 'else'
+        FALSE = 'false'
+        FUN = 'fun'
+        LAMBDA = 'lambda'
+        FOREACH = 'foreach'
+        IN = 'in'
+        FOR = 'for'
+        SWITCH = 'switch'
+        CASE = 'case'
+        DEFAULT = 'default'
+        TRY = 'try'
+        CATCH = 'catch'
+        FINALLY = 'finally'
+        THROW = 'throw'
+        IF = 'if'
+        NIL = 'nil'
+        OR = 'or'
+        PRINT = 'print'
+        RETURN = 'return'
+        BREAK = 'break'
+        CONTINUE = 'continue'
+        SUPER = 'super'
+        THIS = 'this'
+        TRUE = 'true'
+        VAR = 'var'
+        DO = 'do'
+        WHILE = 'while'
+
+        WHITE_SPACE = 'regexp:\s+'
+        COMMENT = 'regexp://.*'
+        NUMBER = 'regexp:[0-9]+(\.[0-9]+)?'
+        STRING = 'regexp:"([^"\\]|\\.)*"'
+        IDENTIFIER = 'regexp:[_a-zA-Z][_a-zA-Z0-9]*'
+    ]
+}
+
+program ::= declaration* <<eof>>
+
+declaration ::= classDecl
+              | funDecl
+              | varDecl
+              | statement
+
+classDecl ::= CLASS IDENTIFIER ( LESS IDENTIFIER )? LEFT_BRACE function* RIGHT_BRACE {
+    pin = 1
+}
+
+funDecl ::= FUN function {
+    pin = 1
+}
+
+varDecl ::= VAR IDENTIFIER ( ASSIGN expression )? EOL {
+    pin = 1
+}
+
+
+statement ::= block
+            | exprStmt
+            | foreachStmt
+            | forStmt
+            | elseIfStmt
+            | printStmt
+            | doWhileStmt
+            | whileStmt
+            | tryStmt
+            | breakStmt
+            | importStmt
+            | returnStmt
+            | continueStmt
+            | throwStmt
+            | switchStmt {
+//  //recoverWhile = statementRecover
+}
+//private statementRecover ::= !(controlKeywords | statementEndings | blockDelimiters | otherKeywords | (NUMBER | STRING | listExpr | mapExpr))
+
+exprStmt ::= expression EOL {
+    //recoverWhile = recoverAll
+}
+
+forStmt ::= FOR LEFT_PAREN ( varDecl | exprStmt | EOL )
+                           expression? EOL
+                           expression? RIGHT_PAREN statement {
+    pin = 1
+//    //recoverWhile = forStmtRecover
+}
+private forStmtRecover ::= !(controlKeywords | statementEndings | otherKeywords | (NUMBER | STRING | listExpr | mapExpr ))
+//ifStmt ::= IF LEFT_PAREN expression RIGHT_PAREN statement
+//                 ( ELSE statement )?
+
+printStmt ::= PRINT expression EOL {
+    pin = 1
+    //recoverWhile = recoverAll
+}
+
+returnStmt ::= RETURN expression? EOL {
+    pin = 1
+    //recoverWhile = recoverAll
+}
+
+whileStmt ::= WHILE parenExpression statement {
+    pin = 1
+    //recoverWhile = recoverAll
+}
+
+block ::= LEFT_BRACE declaration* RIGHT_BRACE {
+    pin = 1
+    //recoverWhile = recoverAll
+}
+
+expression ::= assignment
+
+
+assignment ::= ( primary ( DOT IDENTIFIER )* ) (ASSIGN | PLUS_ASSIGN | MINUS_ASSIGN | MUL_ASSIGN | DIV_ASSIGN | MOD_ASSIGN) assignment
+               | ternary {
+   pin(".*") = 2
+}
+
+// right associative
+ternary ::= logic_or (QUESTION logic_or COLON logic_or)*
+
+logic_or ::= logic_and ( OR logic_and )*
+logic_and ::= equality ( AND equality )*
+equality ::= comparison ( ( NOT_EQUAL | EQUAL ) comparison )*
+comparison ::= term ( ( GREATER | GREAT_EQUAL | LESS | LESS_EQUAL ) term )*
+term ::= factor ( ( MINUS | PLUS ) factor )*
+factor ::= unary ( ( SLASH | STAR | MOD ) unary )*
+
+unary ::= ( BANG | MINUS ) unary | preIncrement | postIncrement | call
+preIncrement ::= (INCREMENT | DECREMENT) primary
+postIncrement ::= primary (INCREMENT | DECREMENT)
+
+call ::= primary ( parentArguments | DOT IDENTIFIER | subscript | slice)*
+
+subscript ::= LEFT_SQUARE expression RIGHT_SQUARE {
+    pin = 1
+}
+slice ::= LEFT_SQUARE expression? COLON expression? RIGHT_SQUARE {
+    pin = 1
+}
+
+primary ::= TRUE | FALSE | NIL | THIS
+               | NUMBER | STRING | IDENTIFIER | parenExpression
+               | SUPER DOT IDENTIFIER
+               | listExpr
+               | mapExpr
+               | lambda_expr {
+    //recoverWhile = primaryRecover
+}
+private primaryRecover ::= !(controlKeywords | statementEndings | blockDelimiters | otherKeywords | literalKeywords)
+
+function ::= IDENTIFIER parentParameters type_expr? block
+private parentParameters ::= LEFT_PAREN parameters* RIGHT_PAREN {
+    pin = 1
+}
+parameterEntry ::= IDENTIFIER type_expr? (ASSIGN expression)?
+parameters ::= parameterEntry (COMMA | &RIGHT_PAREN) {
+    //recoverWhile = parametersRecover
+    pin=1
+}
+private parametersRecover ::= !(RIGHT_PAREN | expression | EOL | <<eof>>)
+private parentArguments ::= LEFT_PAREN arguments* RIGHT_PAREN {
+    pin = 1
+}
+arguments ::= expression (COMMA | &RIGHT_PAREN) {
+     //recoverWhile = argumentsRecover
+     pin=1
+ }
+private argumentsRecover ::= !(RIGHT_PAREN | expression | EOL | <<eof>>)
+
+// extended
+type_expr ::= COLON IDENTIFIER (PIPE IDENTIFIER) *
+
+tryStmt ::= TRY block CATCH LEFT_PAREN VAR IDENTIFIER RIGHT_PAREN block (FINALLY block)? {
+    pin = 1
+}
+
+switchStmt ::= SWITCH parenExpression LEFT_BRACE caseClause* defaultClause? RIGHT_BRACE {
+    pin = 1
+}
+caseClause ::= CASE expression COLON statement* {
+    pin = 1
+}
+defaultClause ::= DEFAULT COLON statement* {
+    pin = 1
+}
+
+lambda_expr ::= LAMBDA parentParameters type_expr? block {
+    pin = 1
+}
+
+elseIfStmt ::= IF parenExpression statement (ELSE IF parenExpression statement)* (ELSE statement)? {
+    pin = 1
+    //recoverWhile = recoverAll
+}
+
+foreachStmt ::= FOREACH LEFT_PAREN VAR IDENTIFIER IN expression RIGHT_PAREN block {
+    pin = 1
+    //recoverWhile = recoverAll
+}
+
+doWhileStmt ::= DO block WHILE parenExpression EOL {
+    pin = 1
+    //recoverWhile = recoverAll
+}
+
+private parenExpression ::= LEFT_PAREN expression RIGHT_PAREN {
+    pin = 1
+}
+
+breakStmt ::= BREAK EOL {
+    pin = 1
+    //recoverWhile = recoverAll
+}
+continueStmt ::= CONTINUE EOL {
+    pin = 1
+    //recoverWhile = recoverAll
+}
+throwStmt ::= THROW expression EOL {
+    pin = 1
+    //recoverWhile = recoverAll
+}
+
+listExpr ::= LEFT_SQUARE listEntry* RIGHT_SQUARE {
+    pin = 1
+}
+private listEntry ::= expression (COMMA | &RIGHT_SQUARE) {
+  //recoverWhile = listEntryRecover
+  pin=1
+}
+private listEntryRecover ::= !(RIGHT_SQUARE | expression | EOL | <<eof>>)
+
+mapExpr ::= LEFT_BRACE mapEntry* RIGHT_BRACE {
+    pin = 1
+}
+pairExpr ::= expression (COLON expression) {
+    pin(".*") = 1
+}
+private mapEntry ::= pairExpr (COMMA |& RIGHT_BRACE) {
+  //recoverWhile = mapEntryRecover
+  pin = 1
+}
+private mapEntryRecover ::= !(RIGHT_BRACE | expression | EOL | <<eof>>)
+
+importStmt ::= IMPORT IDENTIFIER (DOT IDENTIFIER)* EOL {
+    pin = 1;
+    //recoverWhile = recoverAll
+}
+
+
+private controlKeywords ::= (IF | ELSE | WHILE | DO | FOR | FOREACH | SWITCH | DEFAULT | TRY | CATCH | FINALLY)
+private statementEndings ::= (EOL | <<eof>>)
+private blockDelimiters ::= (LEFT_BRACE | RIGHT_BRACE | LEFT_SQUARE | RIGHT_SQUARE | LEFT_PAREN | RIGHT_PAREN)
+private otherKeywords ::= (RETURN | THROW | BREAK | CONTINUE | IMPORT | PRINT | THIS | SUPER | VAR)
+private literalKeywords ::= (NUMBER | STRING | IDENTIFIER | listExpr | mapExpr)
+private recoverAll ::= !(controlKeywords | statementEndings | blockDelimiters | otherKeywords | literalKeywords)

@@ -44,6 +44,7 @@
         <completion.contributor
                 language="mlox"
                 implementationClass="indi.wh0wfg.mlox.completion.MloxKeywordCompletionContributor"/>
+        <lang.braceMatcher language="mlox" implementationClass="indi.wh0wfg.mlox.completion.MloxBraceMatcher"/>
     </extensions>
     <actions>
         <action id="indi.wh0wfg.mlox.actions.CreateMloxFileAction" class="indi.wh0wfg.mlox.actions.CreateMloxFileAction">

@@ -110,7 +110,37 @@ public class MloxKeywordCompletionContributor extends CompletionContributor impl
         addClass();
         addPrint();
         addReturn();
+        addLiterals();
     }
+
+    private void addLiterals() {
+        extend(
+                CompletionType.BASIC,
+                psiElement()
+                        .withLanguage(MloxLanguage.INSTANCE),
+                new CompletionProvider<>() {
+                    @Override
+                    protected void addCompletions(@NotNull CompletionParameters parameters, @NotNull ProcessingContext context, @NotNull CompletionResultSet result) {
+                        result.addElement(
+                                LookupElementBuilder.create("nil")
+                                        .withBoldness(true)
+                                        .withAutoCompletionPolicy(AutoCompletionPolicy.ALWAYS_AUTOCOMPLETE)
+                        );
+                        result.addElement(
+                                LookupElementBuilder.create("true")
+                                        .withBoldness(true)
+                                        .withAutoCompletionPolicy(AutoCompletionPolicy.ALWAYS_AUTOCOMPLETE)
+                        );
+                        result.addElement(
+                                LookupElementBuilder.create("false")
+                                        .withBoldness(true)
+                                        .withAutoCompletionPolicy(AutoCompletionPolicy.ALWAYS_AUTOCOMPLETE)
+                        );
+                    }
+                }
+        );
+    }
+
 
     private void addPrint() {
         extend(
